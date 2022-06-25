@@ -29,14 +29,23 @@ func main() {
 			"message": "Hello World!",
 		})
 	})
+<<<<<<< HEAD
+=======
+
+>>>>>>> 81ce7fc2ce05890038cabe81c724440ba9ba77f3
 	r.GET("/books", func(c *gin.Context) {
 		c.JSON(http.StatusOK, books)
 	})
 
 	r.POST("/books", func(c *gin.Context) {
 		var book Book
+<<<<<<< HEAD
 		if err := c.ShouldBindJSON(&book); err != nil {
 			log.Println("hehee", err)
+=======
+
+		if err := c.ShouldBindJSON(&book); err != nil {
+>>>>>>> 81ce7fc2ce05890038cabe81c724440ba9ba77f3
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": err.Error(),
 			})
@@ -45,5 +54,20 @@ func main() {
 		books = append(books, book)
 		c.JSON(http.StatusCreated, books)
 	})
+<<<<<<< HEAD
+=======
+
+	r.DELETE("/books/:id", func(c *gin.Context) {
+		id := c.Param("id")
+
+		for i, b := range books {
+			if b.ID == id {
+				books = append(books[:i], books[i+1:]...)
+				break
+			}
+		}
+		c.JSON(http.StatusOK, books)
+	})
+>>>>>>> 81ce7fc2ce05890038cabe81c724440ba9ba77f3
 	r.Run()
 }
