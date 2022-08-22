@@ -1,6 +1,9 @@
 package main
 
-import "testing"
+import (
+	"errors"
+	"testing"
+)
 
 type article struct {
 	ID      int    `json:"id"`
@@ -31,4 +34,13 @@ func TestGetAllArticles(t *testing.T) {
 			break
 		}
 	}
+}
+
+func GetArticleByID(id int) (*article, error) {
+	for _, a := range articleList {
+		if a.ID == id {
+			return &a, nil
+		}
+	}
+	return nil, errors.New("Article not found")
 }
