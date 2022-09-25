@@ -1,17 +1,17 @@
 package main
 
 import (
-	"embed"
+	"io"
 	"log"
 	"net/http"
-	"strconv"
+	"os"
 	"time"
 
 	// "github.com/gin-gonic/binding"
 	"github.com/gin-gonic/gin"
 )
 
-var f embed.FS
+// var f embed.FS
 
 type TimeoffRequest struct {
 	Date   time.Time `json:"date" form:"date" binding:"required" time_format:"2006-01-02"`
@@ -73,49 +73,87 @@ func main() {
 	// 		"cookies": cookies,
 	// 	})
 	// })
-	router.GET("/query/*rest", func(c *gin.Context) {
-		username := c.Query("username")
-		year := c.DefaultQuery("year", strconv.Itoa(time.Now().Year()))
-		months := c.QueryArray("month")
+	// router.GET("/query/*rest", func(c *gin.Context) {
+	// 	username := c.Query("username")
+	// 	year := c.DefaultQuery("year", strconv.Itoa(time.Now().Year()))
+	// 	months := c.QueryArray("month")
 
-		c.JSON(http.StatusOK, gin.H{
-			"username": username,
-			"year":     year,
-			"months":   months,
+	// 	c.JSON(http.StatusOK, gin.H{
+	// 		"username": username,
+	// 		"year":     year,
+	// 		"months":   months,
+	// 	})
+	// })
+
+	// router.GET("/employee", func(c *gin.Context) {
+	// 	c.File("./public/employee.html")
+	// })
+	// router.POST("/employee", func(c *gin.Context) {
+	// 	// date := c.PostForm("date")
+	// 	// amount := c.PostForm("amount")
+	// 	// username := c.DefaultPostForm("username", "me")
+	// 	// c.IndentedJSON(http.StatusOK, gin.H{
+	// 	// 	"date":     date,
+	// 	// 	"amount":   amount,
+	// 	// 	"username": username,
+	// 	// })
+	// 	var timeoffRequest TimeoffRequest
+	// 	if err := c.ShouldBind(&timeoffRequest); err == nil {
+	// 		c.JSON(http.StatusOK, timeoffRequest)
+	// 	} else {
+	// 		c.String(http.StatusInternalServerError, err.Error())
+	// 	}
+
+	// })
+
+	// apiGroup := router.Group("/api")
+	// apiGroup.POST("/timeoff", func(c *gin.Context) {
+	// 	var timeoffRequest TimeoffRequest
+	// 	if err := c.ShouldBindJSON(&timeoffRequest); err == nil {
+	// 		c.JSON(http.StatusOK, timeoffRequest)
+	// 	} else {
+	// 		c.String(http.StatusInternalServerError, err.Error())
+	// 	}
+
+	// })
+	router.StaticFile("/", "./index.html")
+	router.GET("tale_of_two_cities", func(c *gin.Context) {
+		f, err := os.Open("./a_tale_of_two_cities.txt")
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+		}
+		defer f.Close()
+		c.Stream(streamer(f))
+	})
+
+	router.GET("great_expectations", func(c *gin.Context) {
+		f, err := os.Open("./great_expectations.txt")
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+		}
+		defer f.Close()
+		fi, err := f.Stat()
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+		}
+		c.DataFromReader(http.StatusOK, fi.Size(), "text/plain", f, map[string]string{
+			"Content-Disposition": "attachment;filename=great_expectations.txt",
 		})
 	})
 
-	router.GET("/employee", func(c *gin.Context) {
-		c.File("./public/employee.html")
-	})
-	router.POST("/employee", func(c *gin.Context) {
-		// date := c.PostForm("date")
-		// amount := c.PostForm("amount")
-		// username := c.DefaultPostForm("username", "me")
-		// c.IndentedJSON(http.StatusOK, gin.H{
-		// 	"date":     date,
-		// 	"amount":   amount,
-		// 	"username": username,
-		// })
-		var timeoffRequest TimeoffRequest
-		if err := c.ShouldBind(&timeoffRequest); err == nil {
-			c.JSON(http.StatusOK, timeoffRequest)
-		} else {
-			c.String(http.StatusInternalServerError, err.Error())
-		}
-
-	})
-
-	apiGroup := router.Group("/api")
-	apiGroup.POST("/timeoff", func(c *gin.Context) {
-		var timeoffRequest TimeoffRequest
-		if err := c.ShouldBindJSON(&timeoffRequest); err == nil {
-			c.JSON(http.StatusOK, timeoffRequest)
-		} else {
-			c.String(http.StatusInternalServerError, err.Error())
-		}
-
-	})
-
 	log.Fatal(router.Run(":3000"))
+}
+
+func streamer(r io.Reader) func(io.Writer) bool {
+	return func(step io.Writer) bool {
+		for {
+			buf := make([]byte, 4*2^10)
+			if _, err := r.Read(buf); err == nil {
+				_, err = step.Write(buf)
+				return true
+			} else {
+				return false
+			}
+		}
+	}
 }
