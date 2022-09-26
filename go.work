@@ -1,0 +1,7 @@
+go 1.19
+
+use (
+	./go-webapp-gin-1
+	./go-webapp-gin-2
+	./go-webapp-gin-3
+)
